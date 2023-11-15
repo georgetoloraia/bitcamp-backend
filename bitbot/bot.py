@@ -1,100 +1,207 @@
-import discord, os
-
-QUESTIONS = [
-    "თქვენი სახელი და გვარი?",
-    "პირადი ნომერი?",
-    "ტელეფონის ნომერი?",
-    "ელ.ფოსტის მისამართი?",
-    "შერჩეული პროგრამის დასახელება?"
-]
+import discord, copy, os
 
 channels = {}
 
-class MyClient(discord.Client):
+class InputType:
+    Text = 1
+    Choice = 2
+
+CHANNEL_TEMPLATE = {
+    "user_id": None,
+    "question": 0,
+    "answers": None
+}
+
+ANSWERS = [
+    {
+        "label": "სახელი და გვარი",
+        "value": None
+    },
+    {
+        "label": "პირადი ნომერი",
+        "value": None
+    },
+    {
+        "label": "თელეფონის ნომერი",
+        "value": None
+    },
+    {
+        "label": "ელ.ფოსტის მისამართი",
+        "value": None
+    },
+    {
+        "label": "შერჩეული პროგრამის დასახელება",
+        "value": None
+    },
+]
+
+QUESTIONS = [
+    {
+        "title": "თქვენი სახელი და გვარი?",
+        "description": None,
+        "input_type": InputType.Text,
+        "choices": None
+    },
+    {
+        "title": "თქვენი პირადი ნომერი?",
+        "description": None,
+        "input_type": InputType.Text,
+        "choices": None
+    },
+    {
+        "title": "თქვენი ტელეფონის ნომერი?",
+        "description": None,
+        "input_type": InputType.Text,
+        "choices": None
+    },
+    {
+        "title": "თქვენი ელ.ფოსტის მისამართი?",
+        "description": None,
+        "input_type": InputType.Text,
+        "choices": None
+    },
+    {
+        "title": "შერჩეული პროგრამის დასახელება?",
+        "description": "აირჩიეთ შერჩეული პროგრამის დასახელება",
+        "input_type": InputType.Choice,
+        "choices": [
+            "front-end-react",
+            "front-end-vue",
+            "back-end-python",
+            "back-end-node",
+            "pro",
+            "kids"
+        ]
+    }
+]
+
+class Client(discord.Client):
     async def on_ready(self):
         print(f"[BitBot] Logged on as {self.user}!")
         
+    async def next_question(self, channel):
+        channel_data = channels[channel.id]
+        
+        try:
+            question = QUESTIONS[channel_data["question"]]
+        except IndexError:
+            await self.prompt_confirm(channel)
+            return False
+        
+        if question["input_type"] == InputType.Text:
+            await channel.send(question["title"])
+        
+        if question["input_type"] == InputType.Choice:
+            question_embed = discord.Embed(
+                title=question["title"],
+                description=question["description"],
+                color=0x7289DA
+            )
+            
+            row = discord.ui.View()
+            for choice in question["choices"]:
+                row.add_item(
+                    discord.ui.Button(style=discord.ButtonStyle.blurple, label=choice, custom_id=choice)
+                )
+            
+            await channel.send(embed=question_embed, view=row)
+    
+    async def prompt_confirm(self, channel):
+        channel_data = channels[channel.id]
+        answers = channel_data["answers"]
+        
+        answers_summary = []
+        choices = []
+        
+        for answer in answers:
+            answers_summary.append(
+                f"**{answer['label']}** - {answer['value']}"
+            )
+            choices.append(
+                f"შეცვალე {answer['label']}"
+            )
+        
+        confirm_embed = discord.Embed(
+            title="სწორია ყველაფერი?",
+            description="\n".join(answers_summary),
+            color=0x7289DA
+        )
+        
+        row = discord.ui.View()
+        row.add_item(
+            discord.ui.Button(style=discord.ButtonStyle.green, label="დადასტურება", custom_id="confirm")
+        )
+        for choice in choices:
+            row.add_item(
+                discord.ui.Button(style=discord.ButtonStyle.blurple, label=choice, custom_id=choice)
+            )
+        
+        await channel.send(embed=confirm_embed, view=row)
+
     async def on_member_join(self, member):
-        new_channel = await member.guild.create_text_channel(f"{member.name}")
+        channel = await member.guild.create_text_channel(f"{member.name}")
         
-        overwrite = discord.PermissionOverwrite(view_channel=True, read_messages=True)
-        await new_channel.set_permissions(member, overwrite=overwrite)
+        await channel.set_permissions(
+            member,
+            overwrite=discord.PermissionOverwrite(view_channel=True, read_messages=True)
+        )
+        await channel.set_permissions(
+            member.guild.default_role,
+            overwrite=discord.PermissionOverwrite(read_messages=False)
+        )
         
-        overwrite_everyone = discord.PermissionOverwrite(read_messages=False)
-        await new_channel.set_permissions(member.guild.default_role, overwrite=overwrite_everyone)
-
-        await new_channel.send(f"{member.mention} კეთილი იყოს თქვენი ფეხი BitCamp-ში.")
-
-        channels[new_channel.id] = {
-            "user_id": member.id,
-            "question": 0,
-            "answers": []
-        }
-        await new_channel.send(QUESTIONS[channels[new_channel.id]["question"]])
-        channels[new_channel.id]["question"] += 1
-
-    async def on_select_option(self, interaction):
-        print(interaction)
+        await channel.send(f"{member.mention} კეთილი იყოს თქვენი ფეხი BitCamp-ში.")
+        
+        channels[channel.id] = copy.deepcopy(CHANNEL_TEMPLATE)
+        channels[channel.id]["user_id"] = member.id
+        channels[channel.id]["answers"] = copy.deepcopy(ANSWERS)
+        
+        await self.next_question(channel)
 
     async def on_interaction(self, interaction):
         if interaction.data["component_type"] == 2:
-            custom_id = interaction.data["custom_id"]
-            choice = {"yes": True, "no": False}[custom_id.split("_")[0]]
-            if interaction.user.id == channels[interaction.channel.id]["user_id"]:
-                if choice == True:
-                    await interaction.response.send_message(
-                        "ანუ ყველაფერი სწორადაა."
-                    )
-                if choice == False:
-                    await interaction.response.send_message(
-                        "თავიდან ვცადოთ მაშინ."
-                    )
-                    channels[interaction.channel.id]["question"] = 0
-                    await interaction.channel.send(QUESTIONS[channels[interaction.channel.id]["question"]])
-                    channels[interaction.channel.id]["question"] += 1
+            channel_data = channels[interaction.channel.id]
+            
+            if interaction.user.id == channel_data["user_id"]:
+                await interaction.message.edit(view=None)
+                    
+                custom_id = interaction.data["custom_id"]
+                question = channel_data["question"]
+                
+                channels[interaction.channel.id]["answers"][question]["value"] = custom_id
+                channels[interaction.channel.id]["question"] += 1
+                
+                await interaction.response.send_message(
+                    f"მოინიშნა **{custom_id}**."
+                )
+                
+                await self.next_question(interaction.channel)
 
     async def on_message(self, message):
+        # DEBUG #
+        if message.channel.id == 1173695205266948136 and message.content == "test me" and message.author.id != 1173667963249897582:
+            await message.channel.send(f"{message.author.mention} Ok")
+            await self.on_member_join(message.author)
+        # DEBUG #
+        
         if message.channel.id in channels:
             channel_data = channels[message.channel.id]
-            if channel_data["user_id"] == message.author.id:
-                if len(channel_data["answers"]) < len(QUESTIONS):
-                    channel_data["answers"].append(message.content)
-
-                if channel_data["question"] < len(QUESTIONS):
-                    await message.channel.send(QUESTIONS[channel_data["question"]])
-                    channel_data["question"] += 1
-                else:
-                    question_embed = discord.Embed(
-                        title="სწორია ყველაფერი?",
-                        description=(
-                            f"**სახელი და გვარი:** {channel_data['answers'][0]}\n"
-                            f"**პირადი ნომერი:** {channel_data['answers'][1]}\n"
-                            f"**ტელეფონის ნომერი:** {channel_data['answers'][2]}\n"
-                            f"**ელ.ფოსტის მისამართი:** {channel_data['answers'][3]}\n"
-                            f"**შერჩეული პროგრამის დასახელება:** {channel_data['answers'][4]}\n"
-                        ),
-                        color=0x7289DA
-                    )
-
-                    buttons = [
-                        discord.ui.Button(style=discord.ButtonStyle.primary, label="კი", custom_id=f"yes_{channels[message.channel.id]['question']}"),
-                        discord.ui.Button(style=discord.ButtonStyle.primary, label="არა", custom_id=f"no_{channels[message.channel.id]['question']}")
-                    ]
-
-                    row = discord.ui.View()
-                    row.add_item(buttons[0])
-                    row.add_item(buttons[1])
-
-                    await message.channel.send(embed=question_embed, view=row)
+            
+            if message.author.id == channel_data["user_id"]:
+                question = QUESTIONS[channel_data["question"]]
+                
+                if question["input_type"] == InputType.Text:
+                    channels[message.channel.id]["answers"][channel_data["question"]]["value"] = message.content
+                    channels[message.channel.id]["question"] += 1
+                    
+                    await self.next_question(message.channel)
 
 def main():
-    global on_button_click
-    
     intents = discord.Intents.default()
     intents.message_content = True
     intents.members = True
 
-    client = MyClient(intents=intents)
+    client = Client(intents=intents)
     client.run(os.environ["DISCORD_BOT_TOKEN"])
 
 if __name__ == "__main__":
