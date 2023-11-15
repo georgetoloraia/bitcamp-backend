@@ -34,7 +34,9 @@ class MyClient(discord.Client):
         await new_channel.send(QUESTIONS[channels[new_channel.id]["question"]])
         channels[new_channel.id]["question"] += 1
 
-    async def on_message(self, message):        
+    async def on_message(self, message):
+        print("Works")
+        
         if message.channel.id in channels:
             channel_data = channels[message.channel.id]
             if channel_data["user_id"] == message.author.id:
@@ -54,7 +56,7 @@ class MyClient(discord.Client):
                         "სწორია ყველაფერი?"
                     )
 
-def main():    
+def main():
     intents = discord.Intents.default()
     intents.message_content = True
     intents.members = True

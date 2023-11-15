@@ -42,12 +42,7 @@ Follow these steps to set up your local development environment.
     ```
 
     The application should now be running at `http://localhost:8000`.
-
-0. Start the bot
-
-    ```bash
-    python bitbot/bot.py
-    ```
+    The Discord bot should be running alongside Django.
 
 ## Documentation
 
