@@ -1,5 +1,5 @@
 from django.apps import AppConfig
-import os, threading, asyncio
+import os, sys, threading, asyncio
 from . import bot
 
 
@@ -10,7 +10,7 @@ class BitbotConfig(AppConfig):
     def ready(self):
         if bool(int(os.environ.get("DISCORD_BOT_STARTED", "0"))):
             print("[BitBot] Discord bot is already running")
-        else:
+        elif "runserver" in sys.argv:
             self.start_bot()
     
     def start_bot(self):
