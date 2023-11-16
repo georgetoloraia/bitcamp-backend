@@ -11,6 +11,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "psycopg2",
     
+    "accounts",
     "bitbot",
     
     "django.contrib.admin",
