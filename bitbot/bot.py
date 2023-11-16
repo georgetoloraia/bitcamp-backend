@@ -5,24 +5,24 @@ channels = {}
 
 # Custom types for questions
 class InputType:
-    Text = 1
-    Choice = 2
+    Text = 0x1
+    Choice = 0x2
+    Attachment = 0x3
 
 # Each "service channel" will be represented in the memmory in this format 
 CHANNEL_TEMPLATE = {
     "user_id": None,
-    "question": 0,
-    "answers": None,
-    "done": False,
-    "confirmed": False
+    "question": 0,     # Pointer to questions list
+    "answers": {},     # List of answers
+    "done": False,     # Finished answering questions
+    "confirmed": False # Finished registration
 }
 
 class Client(discord.Client):
-    def __init__(self, *, intents, questions, answers, **options):
+    def __init__(self, *, intents, questions, **options):
         super().__init__(intents=intents, **options)
         
         self.questions = questions
-        self.answers = answers
     
     # When the Discord bot is ready
     async def on_ready(self):
@@ -50,9 +50,19 @@ class Client(discord.Client):
         # If its a text question
         if question["input_type"] == InputType.Text:
             await channel.send(question["title"])
+            
+        # If its a attachment question
+        if question["input_type"] == InputType.Attachment:
+            await channel.send(question["title"])
         
         # If its a choice question (buttons)
         if question["input_type"] == InputType.Choice:
+            if "if_answer" in question:
+                if not channel_data["answers"][question["if_answer"]["label"]] in question["if_answer"]["is_value"]:
+                    channel_data["question"] += 1
+                    await self.next_question(channel)
+                    return
+                
             question_embed = discord.Embed(
                 title=question["title"],
                 description=question["description"],
@@ -77,10 +87,10 @@ class Client(discord.Client):
         
         for answer in answers:
             answers_summary.append(
-                f"**{answer['label']}** - {answer['value']}"
+                f"**{answer}** - {answers[answer]}"
             )
             choices.append(
-                f"შეცვალე {answer['label']}"
+                f"შეცვალე {answer}"
             )
         
         confirm_embed = discord.Embed(
@@ -120,7 +130,6 @@ class Client(discord.Client):
         
         channels[channel.id] = copy.deepcopy(CHANNEL_TEMPLATE)
         channels[channel.id]["user_id"] = member.id
-        channels[channel.id]["answers"] = copy.deepcopy(self.answers)
         
         await self.next_question(channel)
 
@@ -147,9 +156,9 @@ class Client(discord.Client):
                     channels[interaction.channel.id]["confirmed"] = True
                 # If not on confirmation stage, we accept any buttons
                 else:
-                    question = channel_data["question"]
-                    
-                    channels[interaction.channel.id]["answers"][question]["value"] = custom_id
+                    question = self.questions[channel_data["question"]]
+                
+                    channels[interaction.channel.id]["answers"][question["label"]] = custom_id
                     channels[interaction.channel.id]["question"] += 1
                     
                     await interaction.response.send_message(
@@ -178,17 +187,27 @@ class Client(discord.Client):
                 
                 # If we are waiting for a text input
                 if question["input_type"] == InputType.Text:
-                    channels[message.channel.id]["answers"][channel_data["question"]]["value"] = message.content
-                    
-                    # If on confirmation stage
-                    if channel_data["done"]:
-                        # We return to the last question
-                        channels[message.channel.id]["question"] = len(self.questions)
+                    channels[message.channel.id]["answers"][question["label"]] = message.content
+                
+                # If we are waiting for an attachment
+                if question["input_type"] == InputType.Attachment:
+                    if message.attachments:
+                        attachment_url = message.attachments[0].url
+                        channels[message.channel.id]["answers"][question["label"]] = attachment_url
                     else:
-                        channels[message.channel.id]["question"] += 1
+                        # Handle case where no attachment is provided
+                        await message.channel.send("გთხოვთ ატვირთეთ ფაილი")
+                        return
                     
-                    # We proceed to the next question
-                    await self.next_question(message.channel)
+                # If on confirmation stage
+                if channel_data["done"]:
+                    # We return to the last question
+                    channels[message.channel.id]["question"] = len(self.questions)
+                else:
+                    channels[message.channel.id]["question"] += 1
+                
+                # We proceed to the next question
+                await self.next_question(message.channel)
 
 def main():
     intents = discord.Intents.default()
@@ -202,30 +221,35 @@ def main():
         # We will load this from the database
         questions=[
             {
+                "label": "სახელი და გვარი",
                 "title": "თქვენი სახელი და გვარი?",
                 "description": None,
                 "input_type": InputType.Text,
                 "choices": None
             },
             {
+                "label": "პირადი ნომერი",
                 "title": "თქვენი პირადი ნომერი?",
                 "description": None,
                 "input_type": InputType.Text,
                 "choices": None
             },
             {
+                "label": "თელეფონის ნომერი",
                 "title": "თქვენი ტელეფონის ნომერი?",
                 "description": None,
                 "input_type": InputType.Text,
                 "choices": None
             },
             {
+                "label": "ელ.ფოსტის მისამართი",
                 "title": "თქვენი ელ.ფოსტის მისამართი?",
                 "description": None,
                 "input_type": InputType.Text,
                 "choices": None
             },
             {
+                "label": "შერჩეული პროგრამა",
                 "title": "შერჩეული პროგრამის დასახელება?",
                 "description": "აირჩიეთ შერჩეული პროგრამის დასახელება",
                 "input_type": InputType.Choice,
@@ -237,32 +261,29 @@ def main():
                     "pro",
                     "kids"
                 ]
+            },
+            {
+                "label": "შერჩეული პაკეტი",
+                
+                "if_answer": {
+                    "label": "შერჩეული პროგრამა",
+                    "is_value": ["front-end-react", "back-end-python", "back-end-node"]
+                },
+                
+                "title": "აირჩიეთ პაკეტი",
+                "description": "აირჩიეთ შერჩეული პროგრამის პაკეტი",
+                "input_type": InputType.Choice,
+                "choices": [
+                    "საერთო სამენტორო მომსახურება",
+                    "პირადი მენტორის აყვანა"
+                ]
+            },
+            {
+                "label": "ქვითარი",
+                "title": "ატვირთეთ ქვითრის ფაილი",
+                "description": None,
+                "input_type": InputType.Attachment
             }
-        ],
-        
-        # Answers list for storing answers with their labels
-        # We will load this from the database
-        answers=[
-            {
-                "label": "სახელი და გვარი",
-                "value": None
-            },
-            {
-                "label": "პირადი ნომერი",
-                "value": None
-            },
-            {
-                "label": "თელეფონის ნომერი",
-                "value": None
-            },
-            {
-                "label": "ელ.ფოსტის მისამართი",
-                "value": None
-            },
-            {
-                "label": "შერჩეული პროგრამის დასახელება",
-                "value": None
-            },
         ]
     )
     
