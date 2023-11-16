@@ -9,7 +9,9 @@ class InputType:
 CHANNEL_TEMPLATE = {
     "user_id": None,
     "question": 0,
-    "answers": None
+    "answers": None,
+    "done": False,
+    "confirmed": False
 }
 
 ANSWERS = [
@@ -82,11 +84,17 @@ class Client(discord.Client):
     async def next_question(self, channel):
         channel_data = channels[channel.id]
         
+        if channel_data["confirmed"]:
+            await channel.send("დამთავრდა რეგისტრაცია")
+            print("დამთავრდა რეგისტრაცია, პასუხები:", channel_data["answers"])
+            return
+        
         try:
             question = QUESTIONS[channel_data["question"]]
         except IndexError:
+            channel_data["done"] = True
             await self.prompt_confirm(channel)
-            return False
+            return
         
         if question["input_type"] == InputType.Text:
             await channel.send(question["title"])
@@ -129,11 +137,11 @@ class Client(discord.Client):
         
         row = discord.ui.View()
         row.add_item(
-            discord.ui.Button(style=discord.ButtonStyle.green, label="დადასტურება", custom_id="confirm")
+            discord.ui.Button(style=discord.ButtonStyle.green, label="დადასტურება", custom_id="CONFIRM")
         )
         for choice in choices:
             row.add_item(
-                discord.ui.Button(style=discord.ButtonStyle.blurple, label=choice, custom_id=choice)
+                discord.ui.Button(style=discord.ButtonStyle.blurple, label=choice, custom_id=f"CHANGE_{choices.index(choice)}")
             )
         
         await channel.send(embed=confirm_embed, view=row)
@@ -162,19 +170,25 @@ class Client(discord.Client):
         if interaction.data["component_type"] == 2:
             channel_data = channels[interaction.channel.id]
             
-            if interaction.user.id == channel_data["user_id"]:
+            if interaction.user.id == channel_data["user_id"] and channel_data["confirmed"] == False:
                 await interaction.message.edit(view=None)
                     
                 custom_id = interaction.data["custom_id"]
-                question = channel_data["question"]
                 
-                channels[interaction.channel.id]["answers"][question]["value"] = custom_id
-                channels[interaction.channel.id]["question"] += 1
-                
-                await interaction.response.send_message(
-                    f"მოინიშნა **{custom_id}**."
-                )
-                
+                if channel_data["done"] and custom_id.split("_")[0] == "CHANGE":
+                    channels[interaction.channel.id]["question"] = int(custom_id.split("_")[1])
+                elif channel_data["done"] and custom_id == "CONFIRM":
+                    channels[interaction.channel.id]["confirmed"] = True
+                else:
+                    question = channel_data["question"]
+                    
+                    channels[interaction.channel.id]["answers"][question]["value"] = custom_id
+                    channels[interaction.channel.id]["question"] += 1
+                    
+                    await interaction.response.send_message(
+                        f"მოინიშნა **{custom_id}**."
+                    )
+                    
                 await self.next_question(interaction.channel)
 
     async def on_message(self, message):
@@ -187,12 +201,16 @@ class Client(discord.Client):
         if message.channel.id in channels:
             channel_data = channels[message.channel.id]
             
-            if message.author.id == channel_data["user_id"]:
+            if message.author.id == channel_data["user_id"] and channel_data["confirmed"] == False:
                 question = QUESTIONS[channel_data["question"]]
                 
                 if question["input_type"] == InputType.Text:
                     channels[message.channel.id]["answers"][channel_data["question"]]["value"] = message.content
-                    channels[message.channel.id]["question"] += 1
+                    
+                    if channel_data["done"]:
+                        channels[message.channel.id]["question"] = len(QUESTIONS)
+                    else:
+                        channels[message.channel.id]["question"] += 1
                     
                     await self.next_question(message.channel)
 
