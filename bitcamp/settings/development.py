@@ -10,11 +10,16 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 # Database
 
+# Replace this values according to your development database
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+   "default": {
+       "ENGINE": "django.db.backends.postgresql",
+       "NAME": "bitbase",
+       "USER": "postgres",
+       "PASSWORD": "bitpass",
+       "HOST": "localhost",
+       "PORT": "5432",
+   }
 }
 
 REST_FRAMEWORK = {
