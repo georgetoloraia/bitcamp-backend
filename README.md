@@ -11,7 +11,7 @@ Follow these steps to set up your local development environment.
 - Pip (Python package manager)
 - Django 4.2 or higher
 - Django Rest Framework 3.14 or higher
-- A Discord bot token
+- A Discord bot token (Set an environment variable *DISCORD_BOT_TOKEN*)
 
 ### Setup
 
