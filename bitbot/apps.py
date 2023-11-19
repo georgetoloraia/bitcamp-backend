@@ -1,6 +1,5 @@
 from django.apps import AppConfig
 import os, sys, threading, asyncio
-from . import bot
 
 
 class BitbotConfig(AppConfig):
@@ -15,6 +14,7 @@ class BitbotConfig(AppConfig):
     
     def start_bot(self):
         print("[BitBot] Starting the Discord bot")
+        from . import bot
         
         threading.Thread(
             target=bot.main
