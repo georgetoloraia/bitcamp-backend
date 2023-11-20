@@ -9,7 +9,7 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "corsheaders",
     "drf_spectacular",
-    "psycopg2",
+    "django.contrib.postgres",
     
     "accounts",
     "bitbot",
