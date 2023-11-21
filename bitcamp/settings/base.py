@@ -13,6 +13,7 @@ INSTALLED_APPS = [
     
     "accounts",
     "bitbot",
+    "content",
     
     "django.contrib.admin",
     "django.contrib.auth",
