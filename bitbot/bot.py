@@ -71,6 +71,21 @@ class Client(discord.Client):
                 )
             
             await channel.send(embed=question_embed, view=row)
+        
+        # If it doesnt have an InputType then it probably doesnt want any input :(
+        if question["input_type"] == None:
+            embed = discord.Embed(
+                title=question["title"],
+                color=0x5BCFF5
+            )
+
+            embed.add_field(name=question["label"], value=question["description"], inline=False)
+            
+            await channel.send(embed=embed)
+            
+            channels[channel.id]["question"] += 1
+            
+            await self.next_question(channel)
     
     # Prompt for confirmation of answers
     async def prompt_confirm(self, channel):
