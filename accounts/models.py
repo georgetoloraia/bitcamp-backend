@@ -51,3 +51,33 @@ class DiscordUser(models.Model):
 
     def __str__(self):
         return self.discord_id
+
+# Stores information about payment receipts
+class Payment(models.Model):
+    user = models.OneToOneField(
+        to=DiscordUser,
+        on_delete=models.SET_NULL,
+        blank=False,
+        null=True
+    )
+    
+    receipt_file = models.FileField(
+        verbose_name="Store the uploaded receipt",
+        blank=False
+    )
+    
+    amount = models.DecimalField(
+        verbose_name="Amount paid",
+        max_digits=16,
+        decimal_places=2,
+        blank=False
+    )
+    
+    payment_date = models.DateField(
+        auto_now_add=True
+    )
+    
+    verified = models.BooleanField(
+        verbose_name="Status of payment verification",
+        default=False
+    )
