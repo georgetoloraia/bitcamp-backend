@@ -15,6 +15,9 @@ class Mentor(models.Model):
         blank=True,
         null=True
     )
+    
+    def __str__(self):
+        return f"<Mentor \"{self.fullname}\">"
 
 class Service(models.Model):
     title = models.CharField(
@@ -36,6 +39,9 @@ class Service(models.Model):
         to=Mentor,
         blank=True
     )
+    
+    def __str__(self):
+        return f"<Service \"{self.title}\">"
 
 class Program(models.Model):
     title = models.CharField(
@@ -50,3 +56,6 @@ class Program(models.Model):
         to=Service,
         blank=False
     )
+    
+    def __str__(self):
+        return f"<Program \"{self.title}\">"
