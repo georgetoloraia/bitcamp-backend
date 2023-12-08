@@ -10,7 +10,8 @@ CHANNEL_TEMPLATE = {
     "question": 0,     # Pointer to questions list
     "answers": {},     # List of answers
     "done": False,     # Finished answering questions
-    "confirmed": False # Finished registration
+    "confirmed": False,# Finished registration
+    "paused": True     # Pause registration
 }
 
 class Client(discord.Client):
@@ -26,6 +27,10 @@ class Client(discord.Client):
     # Proceed to the next question
     async def next_question(self, channel):
         channel_data = channels[channel.id]
+        
+        # If registration is paused we dont do anything
+        if channel_data["paused"]:
+            return
         
         if channel_data["confirmed"]:
             await channel.send("დამთავრდა რეგისტრაცია")
@@ -138,6 +143,24 @@ class Client(discord.Client):
         
         await channel.send(f"{member.mention} კეთილი იყოს თქვენი ფეხი BitCamp-ში.")
         
+        # Prompt the user for registration / consultation
+                
+        confirm_embed = discord.Embed(
+            title="",
+            description="გავიაროთ რეგისტრაცია თუ მივიღოთ კონსულტაცია?",
+            color=0x7289DA
+        )
+        
+        row = discord.ui.View()
+        row.add_item(
+            discord.ui.Button(style=discord.ButtonStyle.green, label="რეგისტრაცია", custom_id="RESUME")
+        )
+        row.add_item(
+            discord.ui.Button(style=discord.ButtonStyle.green, label="კონსულტაცია", custom_id="CONSULTATION")
+        )
+        
+        await channel.send(embed=confirm_embed, view=row)
+        
         channels[channel.id] = copy.deepcopy(CHANNEL_TEMPLATE)
         channels[channel.id]["user_id"] = member.id
         
@@ -159,12 +182,18 @@ class Client(discord.Client):
                 # Get the button ID
                 custom_id = interaction.data["custom_id"]
                 
-                # If on confirmation stage, we check for CHANGE and CONFIRM buttons
-                if channel_data["done"] and custom_id.split("_")[0] == "CHANGE":
-                    channels[interaction.channel.id]["question"] = int(custom_id.split("_")[1])
-                elif channel_data["done"] and custom_id == "CONFIRM":
-                    channels[interaction.channel.id]["confirmed"] = True
-                # If not on confirmation stage, we accept any buttons
+                # If on confirmation stage, we check for CHANGE and CONFIRM buttons                
+                if channel_data["done"]:
+                    if custom_id.split("_")[0] == "CHANGE":
+                        channels[interaction.channel.id]["question"] = int(custom_id.split("_")[1])
+                    if custom_id == "CONFIRM":
+                        channels[interaction.channel.id]["confirmed"] = True
+                elif channel_data["paused"]:
+                    if custom_id == "RESUME":
+                        channel_data["paused"] = False
+                    if custom_id == "CONSULTATION":
+                        channel_data["paused"] = True
+                        await interaction.channel.send("მენტორი უმოკლეს დროში მოგწერთ.")
                 else:
                     question = self.questions[channel_data["question"]]
                 
