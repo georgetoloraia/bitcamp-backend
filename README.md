@@ -21,24 +21,18 @@ Follow these steps to set up your local development environment.
     git clone https://github.com/bitcamp-ge/bitcamp-backend
     ```
 
-0. Install the dependencies
+0. Build the Docker image
 
     Navigate to the project directory and run:
     
     ```bash
-    pip install -r requirements.txt
-    ```
-
-0. Apply the migrations
-
-    ```bash
-    python manage.py migrate
+    docker-compose build
     ```
 
 0. Start the server
 
     ```bash
-    python manage.py runserver localhost:8000
+    docker-compose up
     ```
 
     The application should now be running at `http://localhost:8000`.
