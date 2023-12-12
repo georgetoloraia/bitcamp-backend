@@ -84,6 +84,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 
 STATIC_URL = "static/"
+STATIC_ROOT = "code/static/"
 
 # Default primary key field type
 
