@@ -21,23 +21,17 @@ Follow these steps to set up your local development environment.
     git clone https://github.com/bitcamp-ge/bitcamp-backend
     ```
 
-0. Build the Docker image
+0. Build and start the server
 
     Navigate to the project directory and run:
     
     ```bash
-    docker-compose build
+    docker-compose up --build
     ```
 
-0. Start the server
-
-    ```bash
-    docker-compose up
-    ```
-
-    The application should now be running at `http://localhost:8000`.
+    The application should now be running at `http://0.0.0.0/`.
     The Discord bot should be running alongside Django.
 
 ## Documentation
 
-API documentation is available at `http://localhost:8000/api/docs` when the server is running.
+API documentation is available at `http://0.0.0.0/api/docs` when the server is running.
