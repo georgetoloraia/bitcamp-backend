@@ -1,6 +1,14 @@
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-# Create your models here.
+
+class BitCampUser(AbstractUser):
+    phone_number = models.CharField(
+        max_length=16
+    )
+    
+    def __str__(self):
+        return self.username
 
 # This model doesnt inherit from django.contrib.auth.models.AbstractUser
 # because this is not a traditional account with usernames and passwords
