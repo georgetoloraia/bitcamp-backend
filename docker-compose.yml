@@ -68,4 +68,9 @@ volumes:
   postgres_data:
   web_media:
   web_static:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./static
   certbot-etc:
