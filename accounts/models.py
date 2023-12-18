@@ -7,6 +7,13 @@ class BitCampUser(AbstractUser):
         max_length=16
     )
     
+    email = models.CharField(
+        max_length=64,
+        unique=True,
+        blank=False,
+        null=False
+    )
+    
     def __str__(self):
         return self.username
 
