@@ -7,8 +7,7 @@ class BitCampUser(AbstractUser):
         max_length=16
     )
     
-    email = models.CharField(
-        max_length=64,
+    email = models.EmailField(
         unique=True,
         blank=False,
         null=False
