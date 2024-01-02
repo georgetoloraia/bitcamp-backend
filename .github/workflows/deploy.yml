@@ -24,5 +24,6 @@ jobs:
     - name: Deploy to DigitalOcean
       run: |
         cd /home/runner/work/bitcamp-backend/bitcamp-backend
+        ls -R
         docker-compose -f docker-compose.yml down --volumes --remove-orphans
         docker-compose -f docker-compose.yml up -d
