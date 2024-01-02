@@ -13,11 +13,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Debug - List contents
-      run: |
-        pwd
-        ls -R
-        
     - name: Build Docker image
       run: docker-compose -f docker-compose.yml build
 
@@ -28,5 +23,6 @@ jobs:
     steps:
     - name: Deploy to DigitalOcean
       run: |
+        cd /home/runner/work/bitcamp-backend/bitcamp-backend
         docker-compose -f docker-compose.yml down --volumes --remove-orphans
         docker-compose -f docker-compose.yml up -d
