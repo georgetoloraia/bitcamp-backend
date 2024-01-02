@@ -21,6 +21,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Debug - List contents
+      run: ls -R
+
     - name: Deploy to DigitalOcean
       run: |
         docker-compose -f docker-compose.yml down --volumes --remove-orphans
