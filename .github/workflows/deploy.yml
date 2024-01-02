@@ -13,6 +13,9 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    - name: Fetch all content
+      run: git fetch --prune --unshallow
+
     - name: Build Docker image
       run: docker-compose -f docker-compose.yml build
 
@@ -23,9 +26,5 @@ jobs:
     steps:
     - name: Deploy to DigitalOcean
       run: |
-        cd $GITHUB_WORKSPACE
-        ls -R
-        ls -R ./
-        ls -R $GITHUB_WORKSPACE
         docker-compose -f docker-compose.yml down --volumes --remove-orphans
         docker-compose -f docker-compose.yml up -d
