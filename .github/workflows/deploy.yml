@@ -13,6 +13,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    - name: Debug - List contents
+      run: |
+        pwd
+        ls -R
+        
     - name: Build Docker image
       run: docker-compose -f docker-compose.yml build
 
@@ -21,14 +26,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Debug - List contents
-      run: |
-        pwd
-        ls -R
-
     - name: Deploy to DigitalOcean
       run: |
-        pwd
-        ls -R
         docker-compose -f docker-compose.yml down --volumes --remove-orphans
         docker-compose -f docker-compose.yml up -d
