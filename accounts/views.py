@@ -65,3 +65,22 @@ class CurrentUser(APIView):
         user_data.pop("password")
         
         return Response(user_data)
+
+class Enroll(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    @extend_schema(responses=serializers.EnrollmentSerializer)
+    def post(self, request, **kwargs):
+        serializer = serializers.EnrollmentSerializer(
+            data=request.data,
+            context={"user": request.user},
+            partial=True
+        )
+        serializer.user_id = request.user.id
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
