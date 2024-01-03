@@ -1,8 +1,29 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from content import models as content
 
 
 class BitCampUser(AbstractUser):
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        blank=True,
+        null=True,
+        default=None
+    )
+        
+    first_name = models.CharField(
+        max_length=150,
+        blank=False,
+        null=False
+    )
+    
+    last_name = models.CharField(
+        max_length=150,
+        blank=False,
+        null=False
+    )
+    
     phone_number = models.CharField(
         max_length=16
     )
@@ -14,10 +35,8 @@ class BitCampUser(AbstractUser):
     )
     
     def __str__(self):
-        return self.username
+        return self.email
 
-# This model doesnt inherit from django.contrib.auth.models.AbstractUser
-# because this is not a traditional account with usernames and passwords
 class DiscordUser(models.Model):
     first_name = models.CharField(
         max_length=150,
@@ -66,6 +85,48 @@ class DiscordUser(models.Model):
     def __str__(self):
         return self.discord_id
 
+class Enrollment(models.Model):
+    name = models.CharField(
+        max_length=128
+    )
+
+    enrollment_date = models.DateField(
+        auto_now=True
+    )
+
+    enrollment_cancel_date = models.DateField(
+        null=True,
+        default=None
+    )
+
+    user_id = models.OneToOneField(
+        to=BitCampUser,
+        on_delete=models.CASCADE,
+        null=True
+    )
+
+    service_id = models.OneToOneField(
+        to=content.Service,
+        on_delete=models.SET_NULL,
+        null=True
+    )
+
+    program_id = models.OneToOneField(
+        to=content.Program,
+        on_delete=models.SET_NULL,
+        null=True
+    )
+
+    mentor_id = models.OneToOneField(
+        to=content.Mentor,
+        on_delete=models.SET_NULL,
+        null=True
+    )
+
+    status = models.CharField(
+        max_length=16
+    )
+    
 # Stores information about payment receipts
 class Payment(models.Model):
     user = models.OneToOneField(
