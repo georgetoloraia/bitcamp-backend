@@ -66,7 +66,7 @@ class CurrentUser(APIView):
         
         return Response(user_data)
 
-class Enroll(APIView):
+class NewEnroll(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     
@@ -79,6 +79,41 @@ class Enroll(APIView):
         )
         serializer.user_id = request.user.id
 
+        if serializer.is_valid():
+            serializer.save()
+            return Response(status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class MyEnrolls(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    @extend_schema(responses=serializers.EnrollmentSerializer)
+    def get(self, request, **kwargs):
+        enrollments = models.Enrollment.objects.filter(
+            user_id=request.user.id
+        )
+        serializer = serializers.EnrollmentSerializer(enrollments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class UpdateEnroll(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    @extend_schema(responses=serializers.EnrollmentSerializer)
+    def put(self, request, id, **kwargs):
+        enrollment = get_object_or_404(
+            models.Enrollment,
+            id=id
+        )
+        
+        serializer = serializers.EnrollmentSerializer(
+            enrollment,
+            data=request.data,
+            partial=True
+        )
+        
         if serializer.is_valid():
             serializer.save()
             return Response(status=status.HTTP_201_CREATED)
