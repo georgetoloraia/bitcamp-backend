@@ -66,6 +66,24 @@ class CurrentUser(APIView):
         
         return Response(user_data)
 
+class UpdateUser(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    @extend_schema(responses=serializers.BitCampUserSerializer)
+    def put(self, request, **kwargs):        
+        serializer = serializers.BitCampUserSerializer(
+            request.user,
+            data=request.data,
+            partial=True
+        )
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class NewEnroll(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
