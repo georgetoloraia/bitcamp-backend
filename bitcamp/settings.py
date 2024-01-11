@@ -1,5 +1,10 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv()  # Load .env file
+
+PAYZE_API_KEY = os.environ.get('PAYZE_API_KEY')
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -77,7 +82,11 @@ DATABASES = {
 }
 
 REST_FRAMEWORK = {
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema"
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ),
 }
 
 SPECTACULAR_SETTINGS = {

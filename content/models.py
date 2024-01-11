@@ -39,6 +39,13 @@ class Service(models.Model):
         to=Mentor,
         blank=True
     )
+
+    payze_product_id = models.CharField(
+        verbose_name="Payze Product ID",
+        max_length=32,
+        blank=True,
+        null=True
+    )
     
     def __str__(self):
         return f"<Service \"{self.title}\">"

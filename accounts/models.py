@@ -126,6 +126,14 @@ class Enrollment(models.Model):
     status = models.CharField(
         max_length=16
     )
+
+    payze_subscription_id = models.CharField(
+        max_length=255, null=True, blank=True
+    )
+
+    payze_payment_url = models.URLField(
+        max_length=255, null=True, blank=True
+    )
     
 # Stores information about payment receipts
 class Payment(models.Model):
