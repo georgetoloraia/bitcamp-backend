@@ -10,6 +10,10 @@ from . import serializers, models
 import datetime
 import requests
 from django.conf import settings
+import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class SignupUser(APIView):
@@ -111,8 +115,8 @@ class NewEnroll(APIView):
                 if payze_response.status_code == 200:
                     # Process successful response
                     payze_data = payze_response.json()
-                    enrollment.payze_subscription_id = payze_data['id']
-                    enrollment.payze_payment_url = payze_data['transactionUrl']
+                    enrollment.payze_subscription_id = payze_data['data']['id']
+                    enrollment.payze_payment_url = payze_data['data']['transactionUrl']
                     enrollment.save()
                     return Response(payze_data, status=status.HTTP_201_CREATED)
                 else:
@@ -128,18 +132,17 @@ class NewEnroll(APIView):
     def create_payze_subscription(self, user, payze_product_id):
         payload = {
             "productId": payze_product_id,
-            "cardToken": "PAY123ZE...",  # This should be dynamically obtained
-            "hookUrl": "https://yourdomain.com/hook",  # Your server for webhooks
+            "hookUrl": "http://localhost:3000/dashboard",  # Your server for webhooks
             "email": user.email,  # User's email
             "phone": user.phone_number,  # User's phone number
-            "callback": "https://yourdomain.com/callback",  # Callback URL after successful payment
-            "callbackError": "https://yourdomain.com/callback-error",  # Callback URL after failed payment
+            "callback": "http://localhost:3000/dashboard",  # Callback URL after successful payment
+            "callbackError": "http://localhost:3000/dashboard/error",  # Callback URL after failed payment
             "sendEmails": False  # Set based on your preference
         }
         headers = {
             "accept": "application/json",
             "content-type": "application/json",
-            "Authorization": "Bearer " + settings.PAYZE_API_KEY  # Your Payze API Key
+            "Authorization": settings.PAYZE_API_KEY  # Your Payze API Key
         }
         response = requests.post(
             'https://payze.io/v2/api/subscription',
@@ -198,15 +201,12 @@ class CheckPayzeSubscriptionStatusView(APIView):
         subscription_status = self.check_payze_subscription_status(enrollment.payze_subscription_id)
         if subscription_status:
             # Logic to update enrollment based on the status
-            if subscription_status == 'Active':
-                enrollment.status = 'Active'
+            if subscription_status == 'Active' or subscription_status == 'Draft' or subscription_status == 'Cancelled':
+                enrollment.status = subscription_status
                 enrollment.enrollment_date = datetime.date.today()
                 enrollment.save()
                 # Additional logic if needed
-                return Response({"status": "Enrollment updated to Active"}, status=status.HTTP_200_OK)
-            elif subscription_status == 'Cancelled':
-                # Handle cancellation
-                pass
+                return Response({"status": f"Enrollment updated to {subscription_status}"}, status=status.HTTP_200_OK)
             else:
                 # Handle other statuses or unknown status
                 pass
@@ -214,15 +214,14 @@ class CheckPayzeSubscriptionStatusView(APIView):
             return Response({"error": "Unable to verify subscription status"}, status=status.HTTP_400_BAD_REQUEST)
 
     def check_payze_subscription_status(self, subscription_id):
-        url = f"https://payze.io/v2/api/subscription?$filter=Id eq {subscription_id}"
+        url = f"https://payze.io/v2/api/subscriptions?$filter=Id eq {subscription_id}"
         headers = {
             "accept": "application/json",
-            "content-type": "application/json",
-            "Authorization": "Bearer " + settings.PAYZE_API_KEY
+            "Authorization": settings.PAYZE_API_KEY
         }
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
             data = response.json()
-            if len(data) > 0:
-                return data[0]['status']
+            if len(data['value']) > 0:
+                return data['value'][0]['Status']
         return None
