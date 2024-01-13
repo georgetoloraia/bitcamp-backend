@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from . import models
+from content.serializers import ProgramSerializer, ServiceSerializer
 
 
 class BitCampUserSerializer(serializers.ModelSerializer):
@@ -8,6 +9,7 @@ class BitCampUserSerializer(serializers.ModelSerializer):
         fields = [
             "id", "first_name", "last_name", "phone_number", "email", "username", "password"
         ]
+        
 
 class PaymentSerializer(serializers.ModelSerializer):
     title = serializers.ReadOnlyField()
@@ -22,13 +24,17 @@ class PaymentSerializer(serializers.ModelSerializer):
 
 
 class EnrollmentSerializer(serializers.ModelSerializer):
-    payments = PaymentSerializer(many=True, read_only=True)  # Adjust source if needed
+    payments = PaymentSerializer(many=True, read_only=True)
+    # Adjust the field names to match the model's field names
+    program = ProgramSerializer(read_only=True, source='program_id')
+    service = ServiceSerializer(read_only=True, source='service_id')
 
     class Meta:
         model = models.Enrollment
         fields = [
-            "id", "enrollment_date", "enrollment_cancel_date", "user", "service_id", 
-            "program_id", "mentor_id", "status", "payments"
+            "id", "enrollment_date", "enrollment_cancel_date", "user", 
+            "service_id", "program_id", "mentor_id", "status", 
+            "payments", "program", "service"
         ]
 
     def create(self, validated_data):
