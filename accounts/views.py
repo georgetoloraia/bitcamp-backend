@@ -357,7 +357,7 @@ class MyEnrolls(APIView):
     def get(self, request, **kwargs):
         enrollments = models.Enrollment.objects.filter(
             user_id=request.user.id
-        )
+        ).prefetch_related('payments')  # Use prefetch_related for better performance
         serializer = serializers.EnrollmentSerializer(enrollments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
