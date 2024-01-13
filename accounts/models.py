@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from content import models as content
+from django.utils.functional import cached_property
+
 
 
 class BitCampUser(AbstractUser):
@@ -99,10 +101,10 @@ class Enrollment(models.Model):
         default=None
     )
 
-    user_id = models.OneToOneField(
-        to=BitCampUser,
+    user = models.ForeignKey(
+        BitCampUser,
         on_delete=models.CASCADE,
-        null=True
+        related_name='enrollments'
     )
 
     service_id = models.OneToOneField(
@@ -135,32 +137,46 @@ class Enrollment(models.Model):
         max_length=255, null=True, blank=True
     )
     
-# Stores information about payment receipts
 class Payment(models.Model):
-    user = models.OneToOneField(
-        to=DiscordUser,
-        on_delete=models.SET_NULL,
-        blank=False,
-        null=True
+    enrollment = models.ForeignKey(
+        Enrollment,
+        on_delete=models.CASCADE,
+        related_name='payments'
     )
-    
-    receipt_file = models.FileField(
-        verbose_name="Store the uploaded receipt",
-        blank=False
-    )
-    
     amount = models.DecimalField(
         verbose_name="Amount paid",
         max_digits=16,
         decimal_places=2,
         blank=False
     )
-    
-    payment_date = models.DateField(
-        auto_now_add=True
+    status = models.CharField(
+        max_length=128,
+        verbose_name="Payment status"
     )
-    
-    verified = models.BooleanField(
-        verbose_name="Status of payment verification",
-        default=False
+    payze_transactionId = models.CharField(
+        max_length=128,
+        verbose_name="Payze Transaction ID"
     )
+    payze_paymentId = models.CharField(
+        max_length=128,
+        verbose_name="Payze Payment ID"
+    )
+    cardMask = models.CharField(
+        max_length=32,
+        verbose_name="Card Mask"
+    )
+    token = models.CharField(
+        max_length=128,
+        verbose_name="Token"
+    )
+    paymentUrl = models.URLField(
+        verbose_name="Payment URL"
+    )
+
+    @cached_property
+    def title(self):
+        # Assuming each Payment object has a unique ID (primary key)
+        return f"Payment: {self.id} | {self.amount} | {self.enrollment.user.email}"
+
+    def __str__(self):
+        return self.title
