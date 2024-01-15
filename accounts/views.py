@@ -388,8 +388,6 @@ class UpdateEnroll(APIView):
 
 
 class CheckPayzeSubscriptionStatusView(APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
 
     def get(self, request, id, **kwargs):
         logger.info(f"CheckPayzeSubscriptionStatusView called with id {id}")
