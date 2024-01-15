@@ -104,24 +104,28 @@ class Enrollment(models.Model):
     user = models.ForeignKey(
         BitCampUser,
         on_delete=models.CASCADE,
-        related_name='enrollments'
-    )
-
-    service_id = models.OneToOneField(
-        to=content.Service,
-        on_delete=models.SET_NULL,
+        related_name='enrollments',
         null=True
     )
 
-    program_id = models.OneToOneField(
-        to=content.Program,
+    service_id = models.ForeignKey(
+        content.Service,
         on_delete=models.SET_NULL,
+        related_name='enrollments',
         null=True
     )
 
-    mentor_id = models.OneToOneField(
-        to=content.Mentor,
+    program_id = models.ForeignKey(
+        content.Program,
         on_delete=models.SET_NULL,
+        related_name='enrollments',
+        null=True
+    )
+
+    mentor_id = models.ForeignKey(
+        content.Mentor,
+        on_delete=models.SET_NULL,
+        related_name='enrollments',
         null=True
     )
 
