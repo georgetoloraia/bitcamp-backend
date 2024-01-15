@@ -138,6 +138,9 @@ class Enrollment(models.Model):
     )
     
 class Payment(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
     enrollment = models.ForeignKey(
         Enrollment,
         on_delete=models.CASCADE,

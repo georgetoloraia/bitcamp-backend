@@ -1,13 +1,14 @@
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.response import Response
+from django.http import HttpResponseRedirect
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from . import serializers, models
-import datetime
+from datetime import datetime, timezone, timedelta
 import requests
 from django.conf import settings
 import json
@@ -239,7 +240,8 @@ class NewEnroll(APIView):
                 # paymentUrl should be the same as the paymentUrl in the response
                 # Let's start implementing the Payment creation request to payze.io API:
                 
-                logger.info("Creating Payze payment")
+                logger.info(f"Creating Payze payment - Enrollment: {enrollment.id}")
+                
                 payload = {
                     "source": "Card",
                     # Object of type Decimal is not JSON serializable
@@ -251,8 +253,8 @@ class NewEnroll(APIView):
                     },
                     "hooks": {
                         "webhookGateway": "https://platform.bitcamp.ge/payments/payze_hook",
-                        "successRedirectGateway": "https://platform.bitcamp.ge/dashboard?payment=success",
-                        "errorRedirectGateway": "https://platform.bitcamp.ge/dashboard?payment=error"
+                        "successRedirectGateway": f"https://platform.bitcamp.ge/enrollments/{enrollment.id}/check-payze-subscription-status",
+                        "errorRedirectGateway": f"https://platform.bitcamp.ge/enrollments/{enrollment.id}/check-payze-subscription-status"
                     },
                     "metadata": {
                         "extraAttributes": [
@@ -394,8 +396,24 @@ class CheckPayzeSubscriptionStatusView(APIView):
         try:
             enrollment = models.Enrollment.objects.get(id=id)
             updated_payments = self.check_payments_statuses_by_enrollment(enrollment.id)
+            # Here I need to check the status of the payments related to the enrollment. Status check should be performed by looping through related payments and checking the status of each payment. If at least one payment is Captured within the last 30 days, then the enrollment status should be set to Active.
+            for payment in updated_payments:
+                if payment.status == 'Captured':
+                    # Payment model has a field called created_at which is a DateTimeField. I need to check if the payment was created within the last 30 days. If so, then I need to set the enrollment status to Active.
+                    # TypeError: can't compare offset-naive and offset-aware datetimes - I need to make the datetime object aware of the timezone
+                    # How do I make a datetime object timezone aware?
+                    
+                    
+                    if payment.created_at > datetime.now(timezone.utc) - timedelta(days=30): 
+                        enrollment.status = 'Active'
+                        enrollment.save()
+                        logger.info(f"Enrollment {enrollment.id} status set to Active")
+                        break
+            
             serializer = serializers.PaymentSerializer(updated_payments, many=True)
-            return Response({"updated_payments": serializer.data}, status=status.HTTP_200_OK)
+            
+            # Here I need to redirect user to a frontend URL with a different domain.
+            return HttpResponseRedirect('https://www.bitcamp.ge/dashboard?payment=success')
         except models.Enrollment.DoesNotExist:
             return Response({"error": "Enrollment not found"}, status=status.HTTP_404_NOT_FOUND)
 
