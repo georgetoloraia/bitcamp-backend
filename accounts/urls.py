@@ -7,7 +7,8 @@ urlpatterns = [
     path("auth/login", views.LoginUser.as_view(), name="login"),
     path("auth/profile", views.CurrentUser.as_view(), name="user"),
     path("auth/profile/update", views.UpdateUser.as_view(), name="updateuser"),
-    path("enroll/new", views.NewEnroll.as_view(), name="enrollment"),
+    path("enroll", views.NewEnroll.as_view(), name="enrollment"),
     path("enrollments", views.MyEnrolls.as_view(), name="myenrollments"),
-    path("enroll/update/<int:id>", views.UpdateEnroll.as_view())
+    path('enrollments/<int:id>/check-payze-subscription-status', views.CheckPayzeSubscriptionStatusView.as_view(), name='check-payze-status'),
+    path("enroll/<int:id>", views.UpdateEnroll.as_view())
 ]

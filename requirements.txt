@@ -5,3 +5,5 @@ drf-spectacular
 psycopg2
 discord.py
 gunicorn
+requests
+python-dotenv
