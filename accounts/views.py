@@ -11,7 +11,6 @@ from . import serializers, models
 from datetime import datetime, timezone, timedelta
 import requests
 from django.conf import settings
-import json
 import logging
 
 logger = logging.getLogger(__name__)
