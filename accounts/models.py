@@ -2,6 +2,8 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from content import models as content
 from django.utils.functional import cached_property
+from django.contrib import admin
+
 
 
 
@@ -141,6 +143,9 @@ class Enrollment(models.Model):
         max_length=255, null=True, blank=True
     )
     
+    def __str__(self):
+        return f"{self.service_id.title} | {self.user.email} | {self.status}"
+    
 class Payment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -187,3 +192,4 @@ class Payment(models.Model):
 
     def __str__(self):
         return self.title
+    
