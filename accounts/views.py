@@ -112,7 +112,20 @@ class NewEnroll(APIView):
             logger.info("SERIALIZER IS VALID")
             
             try:
-                enrollment = serializer.save()
+                # Load Enrollments related to the user that has status Pending and change their status to Cancelled - this will prevent failed payment page from showing up when user tries to enroll in a new service on Payze.io.
+                logger.info("Loading user's pending enrollments")
+                pending_enrollments = models.Enrollment.objects.filter(
+                    user_id=request.user.id,
+                    status='Pending'
+                )
+                logger.info(f"Found {len(pending_enrollments)} pending enrollments")
+                for enrollment in pending_enrollments:
+                    logger.info(f"Enrollment {enrollment.id} status changed to Cancelled")
+                    enrollment.status = 'Cancelled'
+                    enrollment.save()
+                logger.info("User's pending enrollments status changed to Cancelled")
+                
+                newEnrollment = serializer.save()
                 logger.info("Saving enrollment successful")
                 
             except Exception as e:
@@ -120,7 +133,7 @@ class NewEnroll(APIView):
                 logger.error(e)
                 return Response({"error": "Error saving enrollment"}, status=status.HTTP_400_BAD_REQUEST)
             
-            service = enrollment.service_id
+            service = newEnrollment.service_id
 
             # Ensure service is not None
             if service is not None:
@@ -239,7 +252,7 @@ class NewEnroll(APIView):
                 # paymentUrl should be the same as the paymentUrl in the response
                 # Let's start implementing the Payment creation request to payze.io API:
                 
-                logger.info(f"Creating Payze payment - Enrollment: {enrollment.id}")
+                logger.info(f"Creating Payze payment - Enrollment: {newEnrollment.id}")
                 
                 payload = {
                     "source": "Card",
@@ -252,13 +265,13 @@ class NewEnroll(APIView):
                     },
                     "hooks": {
                         "webhookGateway": "https://platform.bitcamp.ge/payments/payze_hook",
-                        "successRedirectGateway": f"https://platform.bitcamp.ge/enrollments/{enrollment.id}/check-payze-subscription-status",
-                        "errorRedirectGateway": f"https://platform.bitcamp.ge/enrollments/{enrollment.id}/check-payze-subscription-status"
+                        "successRedirectGateway": f"https://platform.bitcamp.ge/enrollments/{newEnrollment.id}/check-payze-subscription-status",
+                        "errorRedirectGateway": f"https://platform.bitcamp.ge/enrollments/{newEnrollment.id}/check-payze-subscription-status"
                     },
                     "metadata": {
                         "extraAttributes": [
                             { "key": "service", "value": service.title },
-                            { "key": "email", "value": enrollment.user.email }
+                            { "key": "email", "value": newEnrollment.user.email }
                         ]
                     }
                 }
@@ -291,7 +304,7 @@ class NewEnroll(APIView):
                     payze_data = payze_response.json()
                     try:
                         payment = models.Payment.objects.create(
-                            enrollment=enrollment,
+                            enrollment=newEnrollment,
                             amount=payze_data['data']['payment']['amount'],
                             status=payze_data['data']['payment']['status'],
                             payze_transactionId=payze_data['data']['payment']['transactionId'],
