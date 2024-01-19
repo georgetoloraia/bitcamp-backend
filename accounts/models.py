@@ -144,7 +144,7 @@ class Enrollment(models.Model):
     )
     
     def __str__(self):
-        return f"{self.service_id.title} | {self.user.email} | {self.status}"
+        return f"{self.service_id.title} | {self.user.email} | {self.user.phone_number} | {self.status}"
     
 class Payment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
