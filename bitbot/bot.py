@@ -19,7 +19,7 @@ async def ping_command(interaction):
     )
 
 @tree.command(name="mkchannels", description="Create private channels for members with a specified role.", guild=discord.Object(id=1173683645878386729))
-async def create_channels(interaction, role: discord.Role):
+async def create_channels(interaction, role: discord.Role = None):
     if not interaction.user.guild_permissions.administrator:
         await interaction.response.send_message(
             f"Only administrators can use this command.", ephemeral=True
@@ -28,10 +28,13 @@ async def create_channels(interaction, role: discord.Role):
     
     guild = interaction.guild
 
-    members_with_role = [member for member in guild.members if role in member.roles]
-    
+    if role:
+        members_to_process = [member for member in guild.members if role in member.roles]
+    else:
+        members_to_process = [member for member in guild.members if len(member.roles) == 1 and guild.default_role in member.roles]
+
     creating, skipping = [], []
-    for member in members_with_role:
+    for member in members_to_process:
         if re.sub(r"[^\w]", "", member.name.lower()) in [channel.name for channel in member.guild.channels]:
             skipping.append(member.name)
         else:
@@ -48,7 +51,7 @@ async def create_channels(interaction, role: discord.Role):
         message, ephemeral=True
     )
 
-    for member in members_with_role:
+    for member in members_to_process:
         channel_name = re.sub(r"[^\w]", "", member.name.lower())
         
         if channel_name in [channel.name for channel in member.guild.channels]:
