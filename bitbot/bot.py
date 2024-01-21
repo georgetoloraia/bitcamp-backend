@@ -9,16 +9,16 @@ tree = discord.app_commands.CommandTree(client)
     
 @client.event
 async def on_ready():
-    await tree.sync(guild=discord.Object(id=1173683645878386729))
+    await tree.sync(guild=discord.Object(id=1153858189884915752))
     print(f"[bitcamper] logged in as {client.user.name}")
 
-@tree.command(name="ping", description="Ping", guild=discord.Object(id=1173683645878386729))
+@tree.command(name="ping", description="Ping", guild=discord.Object(id=1153858189884915752))
 async def ping_command(interaction):
     await interaction.response.send_message(
         f"**{int(client.latency*1000)}**ms"
     )
 
-@tree.command(name="mkchannels", description="Create private channels for members with a specified role.", guild=discord.Object(id=1173683645878386729))
+@tree.command(name="mkchannels", description="Create private channels for members with a specified role.", guild=discord.Object(id=1153858189884915752))
 async def create_channels(interaction, role: discord.Role = None):
     if not interaction.user.guild_permissions.administrator:
         await interaction.response.send_message(
