@@ -81,5 +81,11 @@ async def on_member_join(member):
     
     await new_channel.send(f"გამარჯობა, {member.mention}! ეს არის თქვენი პირადი არხი.")
 
+
+def start():
+    client.run(os.environ["DISCORD_BOT_TOKEN"])
+
+
+
 if __name__ == "__main__":
     client.run(os.environ["DISCORD_BOT_TOKEN"])
