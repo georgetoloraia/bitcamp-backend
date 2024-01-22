@@ -11,5 +11,8 @@ urlpatterns = [
     path("enroll", views.NewEnroll.as_view(), name="enrollment"),
     path("enrollments", views.MyEnrolls.as_view(), name="myenrollments"),
     path('enrollments/<int:id>/check-payze-subscription-status', views.CheckPayzeSubscriptionStatusView.as_view(), name='check-payze-status'),
-    path("enrollments/<int:id>", views.UpdateEnroll.as_view())
+    path("enrollments/<int:id>", views.UpdateEnroll.as_view()),
+    path("kids/newprofile", views.NewKidsProfile.as_view()),
+    path("kids/getprofiles", views.GetKidsProfile.as_view()),
+    path("kids/deleteprofile", views.DeleteKidsProfile.as_view())
 ]

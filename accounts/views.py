@@ -489,4 +489,41 @@ class CheckPayzeSubscriptionStatusView(APIView):
         logger.info(f"Number of payments updated successfully {len(updated_payments)} ")
         return updated_payments
         
-       
+class NewKidsProfile(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    @extend_schema(responses=serializers.KidsProfileSerializer)
+    def post(self, request, **kwargs):
+        serializer = serializers.KidsProfileSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class GetKidsProfile(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    @extend_schema(responses=serializers.KidsProfileSerializer)
+    def get(self, request, **kwargs):
+        profiles = models.KidsProfile.objects.filter(user=request.user)
+        serializer = serializers.KidsProfileSerializer(profiles, many=True)
+        return Response(serializer.data)
+
+class DeleteKidsProfile(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    @extend_schema(responses=serializers.KidsProfileSerializer)
+    def delete(self, request, **kwargs):
+        profile_id = request.query_params.get("id")
+        if not profile_id:
+            return Response({"error": "Profile ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            profile = models.KidsProfile.objects.get(id=profile_id, user=request.user)
+            profile.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except models.KidsProfile.DoesNotExist:
+            return Response({"error": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
