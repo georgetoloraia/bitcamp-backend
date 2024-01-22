@@ -91,6 +91,20 @@ class UpdateUser(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class Discord(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    @extend_schema(responses=serializers.BitCampUserSerializer)
+    def post(self, request, **kwargs):
+        if request.data["code"]:
+            code = request.data["code"]
+        
+        # Super robust Discord connection view
+        # Todo
+        
+        return Response(status=status.HTTP_418_IM_A_TEAPOT)
+
 class NewEnroll(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
