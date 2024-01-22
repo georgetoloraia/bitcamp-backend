@@ -5,8 +5,6 @@ from django.utils.functional import cached_property
 from django.contrib import admin
 
 
-
-
 class BitCampUser(AbstractUser):
     username = models.CharField(
         max_length=150,
@@ -98,6 +96,22 @@ class Enrollment(models.Model):
     def __str__(self):
         return f"{self.service_id.title} | {self.user.email} | {self.user.phone_number} | {self.status}"
     
+class KidsProfile(models.Model):
+    user = models.ForeignKey(
+        BitCampUser,
+        on_delete=models.SET_NULL,
+        related_name="kids_profiles",
+        null=True
+    )
+    
+    age = models.CharField(
+        max_length=32
+    )
+    
+    availability = models.CharField(
+        max_length=64
+    ) 
+
 class Payment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
