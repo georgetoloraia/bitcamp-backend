@@ -44,3 +44,7 @@ class EnrollmentSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
     
     
+class KidsProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.KidsProfile
+        fields = "__all__"
