@@ -57,15 +57,7 @@ async def create_channels(interaction, role: discord.Role = None):
         if channel_name in [channel.name for channel in member.guild.channels]:
             continue
         
-        overwrites = {
-            guild.default_role: discord.PermissionOverwrite(read_messages=False),
-            member: discord.PermissionOverwrite(read_messages=True),
-            client.user: discord.PermissionOverwrite(read_messages=True)
-        }
-
-        new_channel = await guild.create_text_channel(channel_name, overwrites=overwrites)
-        
-        await new_channel.send(f"გამარჯობა, {member.mention}! ეს არის თქვენი პირადი არხი.")
+        await on_member_join(member)
     
 @client.event
 async def on_member_join(member):
@@ -76,16 +68,18 @@ async def on_member_join(member):
         member: discord.PermissionOverwrite(read_messages=True),
         client.user: discord.PermissionOverwrite(read_messages=True)
     }
-
-    new_channel = await guild.create_text_channel(channel_name, overwrites=overwrites)
     
-    await new_channel.send(f"გამარჯობა, {member.mention}! ეს არის თქვენი პირადი არხი.")
+    if "ახალი მოსწავლე" in [category.name for category in guild.categories]:
+        category = [category for category in guild.categories if category.name == "ახალი მოსწავლე"][0]
+    else:    
+        category = await guild.create_category("ახალი მოსწავლე")
 
+    new_channel = await guild.create_text_channel(channel_name, overwrites=overwrites, category=category)
+    
+    await new_channel.send(f"გამარჯობა, {member.mention}! იმისათვის რომ მოგენიჭოთ მოსწავლის როლი და გამოგიჩნდეთ სასწავლო არხები, გთხოვთ მოგვწეროთ საიტზე რეგისტრაციისას გამოყენებული email და მოსწავლის ასაკი.")
 
 def start():
     client.run(os.environ["DISCORD_BOT_TOKEN"])
-
-
 
 if __name__ == "__main__":
     client.run(os.environ["DISCORD_BOT_TOKEN"])
