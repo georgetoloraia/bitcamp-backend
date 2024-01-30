@@ -19,7 +19,7 @@ class BitbotConfig(AppConfig):
         from . import bot
         
         threading.Thread(
-            target=bot.main
+            target=bot.start
         ).start()
         
         os.environ["DISCORD_BOT_STARTED"] = "1"
