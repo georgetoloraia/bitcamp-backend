@@ -1,10 +1,9 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-load_dotenv()  # Load .env file
+load_dotenv()
 
 PAYZE_API_KEY = os.environ.get('PAYZE_API_KEY')
-
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -55,7 +54,7 @@ ROOT_URLCONF = "bitcamp.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "accounts" / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
