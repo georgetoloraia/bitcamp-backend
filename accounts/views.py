@@ -5,6 +5,8 @@ from django.http import HttpResponseRedirect
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from rest_framework import status
+from django.urls import reverse
+from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from . import serializers, models
@@ -527,3 +529,11 @@ class DeleteKidsProfile(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except models.KidsProfile.DoesNotExist:
             return Response({"error": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
+
+@staff_member_required
+def ManualTransaction(request, user_id):
+    user = models.BitCampUser.objects.filter(id=user_id)[0]
+    
+    # TODO: Send payment request
+    
+    return HttpResponseRedirect(reverse("admin:accounts_bitcampuser_change", args=[user_id]))
