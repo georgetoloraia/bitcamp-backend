@@ -10,6 +10,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from . import serializers, models
+from content import models as content_models
 from datetime import datetime, timezone, timedelta
 import requests
 from django.conf import settings
@@ -532,11 +533,27 @@ class DeleteKidsProfile(APIView):
 
 @staff_member_required
 def ManualTransaction(request, enrollment_id):
-    enrollment = models.Enrollment.objects.filter(id=enrollment_id).first()
+    enrollment = models.Enrollment.objects.get(id=enrollment_id)
     if enrollment is None:
         return HttpResponseRedirect(reverse("admin:index"))
+    
+    service = enrollment.service_id
+    last_payment = models.Payment.objects.filter(enrollment = enrollment_id).latest("created_at")
 
-    # TODO: Rest of the transaction code
-    print(enrollment)
-
-    return HttpResponseRedirect(reverse("admin:accounts_enrollment_change", args=[enrollment_id]))
+    headers = {
+        "Content-Type": "application/json",
+        "API-KEY": settings.PAYZE_API_KEY,
+    }
+    
+    data = {
+        "amount": service.price,
+        "currency": "GEL",
+        "cardToken": last_payment.token,
+    }
+    
+    response = requests.post("https://api.payze.io/transaction/charge", json=data, headers=headers)
+    
+    if response.status_code == 200:
+        return HttpResponseRedirect(reverse("admin:accounts_enrollment_change", args=[enrollment_id]), status=status.HTTP_201_CREATED)
+    else:
+        return HttpResponseRedirect(reverse("admin:accounts_enrollment_change", args=[enrollment_id]), status=status.HTTP_400_BAD_REQUEST)
