@@ -541,17 +541,20 @@ def ManualTransaction(request, enrollment_id):
     last_payment = models.Payment.objects.filter(enrollment = enrollment_id).latest("created_at")
 
     headers = {
-        "Content-Type": "application/json",
-        "API-KEY": settings.PAYZE_API_KEY,
+        "accept": "application/json",
+        "content-type": "application/json",
+        "authorization": settings.PAYZE_API_KEY,
     }
     
     data = {
-        "amount": service.price,
+        "source": "Card",
+        "amount": service.price.__str__(),
         "currency": "GEL",
-        "cardToken": last_payment.token,
+        "language": "KA",
+        "token": last_payment.token.__str__(),
     }
     
-    response = requests.post("https://api.payze.io/transaction/charge", json=data, headers=headers)
+    response = requests.post("https://payze.io/api/v2/payment", json=data, headers=headers)
     
     if response.status_code == 200:
         return HttpResponseRedirect(reverse("admin:accounts_enrollment_change", args=[enrollment_id]), status=status.HTTP_201_CREATED)
