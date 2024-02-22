@@ -35,6 +35,9 @@ class StatusFilter(admin.SimpleListFilter):
         if self.value() == 'inactive':
             return queryset.filter(status='inactive')
         # Handle more statuses here
+
+class EnrollmentAdmin(admin.ModelAdmin):
+    change_form_template = "admin/accounts/enrollment/change_form.html"
         
 class PaymentAdmin(admin.ModelAdmin):
     actions = ["process_refund"]
@@ -69,9 +72,7 @@ class PaymentAdmin(admin.ModelAdmin):
 admin.site.register(models.Payment, PaymentAdmin)
 
 
-class BitCampUserAdmin(UserAdmin):
-    change_form_template = 'admin/accounts/bitcampuser/change_form.html'
-    
+class BitCampUserAdmin(UserAdmin):    
     # Use the default fields from UserAdmin and add 'phone_number'
     fieldsets = UserAdmin.fieldsets + (
         (('Additional Info'), {'fields': ('phone_number',)}),

@@ -531,9 +531,12 @@ class DeleteKidsProfile(APIView):
             return Response({"error": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
 
 @staff_member_required
-def ManualTransaction(request, user_id):
-    user = models.BitCampUser.objects.filter(id=user_id)[0]
-    
-    # TODO: Send payment request
-    
-    return HttpResponseRedirect(reverse("admin:accounts_bitcampuser_change", args=[user_id]))
+def ManualTransaction(request, enrollment_id):
+    enrollment = models.Enrollment.objects.filter(id=enrollment_id).first()
+    if enrollment is None:
+        return HttpResponseRedirect(reverse("admin:index"))
+
+    # TODO: Rest of the transaction code
+    print(enrollment)
+
+    return HttpResponseRedirect(reverse("admin:accounts_enrollment_change", args=[enrollment_id]))

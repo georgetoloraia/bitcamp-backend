@@ -7,7 +7,7 @@ from accounts.views import ManualTransaction
 
 
 urlpatterns = [
-    path("admin/accounts/bitcampuser/<int:user_id>/change/transaction/", ManualTransaction),
+    path("admin/accounts/enrollment/<int:enrollment_id>/change/transaction/", ManualTransaction),
     path("admin/", admin.site.urls),
     path("", include("accounts.urls")),
     path("api/schema", SpectacularAPIView.as_view(), name="schema"),
