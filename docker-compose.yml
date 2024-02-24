@@ -29,7 +29,7 @@ services:
       - web_static:/code/static
     environment:
       - SECRET_KEY=BitCamp-სწავლა-და-ბრძოლა-1024
-      - DEBUG=False
+      - DEBUG=0
       - DISCORD_BOT_TOKEN=<bot_token>
       - DB_NAME=bitcamp
       - DB_USER=user
