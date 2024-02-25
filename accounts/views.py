@@ -539,24 +539,63 @@ def ManualTransaction(request, enrollment_id):
     
     service = enrollment.service_id
     last_payment = models.Payment.objects.filter(enrollment = enrollment_id).latest("created_at")
-
-    headers = {
-        "accept": "application/json",
-        "content-type": "application/json",
-        "authorization": settings.PAYZE_API_KEY,
-    }
     
-    data = {
+    payload = {
         "source": "Card",
+        # Object of type Decimal is not JSON serializable
         "amount": service.price.__str__(),
         "currency": "GEL",
         "language": "KA",
         "token": last_payment.token.__str__(),
+        "hooks": {
+            "webhookGateway": "https://platform.bitcamp.ge/payments/payze_hook",
+            "successRedirectGateway": f"https://platform.bitcamp.ge/enrollments/{enrollment.id}/check-payze-subscription-status",
+            "errorRedirectGateway": f"https://platform.bitcamp.ge/enrollments/{enrollment.id}/check-payze-subscription-status"
+        },
+        "metadata": {
+            "extraAttributes": [
+                { "key": "service", "value": service.title },
+                { "key": "email", "value": enrollment.user.email }
+            ]
+        }
+    }
+    headers = {
+        "Accept": "application/*+json",
+        "Content-Type": "application/json",
+        "Authorization": settings.PAYZE_API_KEY,
+        "User-Agent": "python-app/v1"
     }
     
-    response = requests.post("https://payze.io/api/v2/payment", json=data, headers=headers)
+    
+    response = requests.put('https://payze.io/v2/api/payment', json=payload, headers=headers)
+    
+    # Access the response body as JSON
+    response_data = response.text
+    print(f"Response Data: {response_data}")
+    
+    
     
     if response.status_code == 200:
+        logger.info("Request sent and response received successfully from Payze")
+        
+        payze_data = response.json()
+        payment = models.Payment.objects.create(
+            enrollment=enrollment,
+            amount=payze_data['data']['payment']['amount'],
+            status=payze_data['data']['payment']['status'],
+            payze_transactionId=payze_data['data']['payment']['transactionId'],
+            payze_paymentId=payze_data['data']['payment']['id'],
+            # ERROR:  null value in column "cardMask" violates not-null constraint. Let's check the response and see if cardMask is null and if so, let's set it to empty string
+            cardMask=payze_data['data']['payment']['cardPayment']['cardMask'] if payze_data['data']['payment']['cardPayment']['cardMask'] is not None else "",
+            token=payze_data['data']['payment']['cardPayment']['token'],
+        )
+        
+        # Save the Payment object
+        logger.info("Saving Payze payment")
+        payment.save()
+        logger.info("Saving Payze payment successful")
+        
+        
         return HttpResponseRedirect(reverse("admin:accounts_enrollment_change", args=[enrollment_id]), status=status.HTTP_201_CREATED)
     else:
         return HttpResponseRedirect(reverse("admin:accounts_enrollment_change", args=[enrollment_id]), status=status.HTTP_400_BAD_REQUEST)
