@@ -7,7 +7,6 @@ import requests
 
 # Register your models here.
 
-admin.site.register(models.Enrollment)
 
 class StatusFilter(admin.SimpleListFilter):
     title = _('status')  # or use 'verbose_name' of the field
@@ -38,6 +37,30 @@ class StatusFilter(admin.SimpleListFilter):
 
 class EnrollmentAdmin(admin.ModelAdmin):
     change_form_template = "admin/accounts/enrollment/change_form.html"
+    
+    list_display = ('id', 'get_user_email','get_service_title', 'get_program_title', 'status')
+
+    # Adding filters
+    list_filter = ('status', 'name', 'user__email')
+
+    # Search functionality (optional, but useful)
+    search_fields = ('status', 'user__email')
+    
+    def get_user_email(self, obj):
+        # Return user email if it exists, otherwise return a default value
+        return obj.user.email if obj.user else 'No email'
+    get_user_email.short_description = 'User Email'  # Sets column name in admin
+    
+    def get_service_title(self, obj):
+        return obj.service_id.title if obj.service_id else 'No Service'
+    get_service_title.short_description = 'Service Title'
+
+    def get_program_title(self, obj):
+        return obj.program_id.title if obj.program_id else 'No Program'
+    get_program_title.short_description = 'Program Title'
+
+    
+admin.site.register(models.Enrollment, EnrollmentAdmin)
         
 class PaymentAdmin(admin.ModelAdmin):
     actions = ["process_refund"]
