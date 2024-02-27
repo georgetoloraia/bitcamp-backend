@@ -7,6 +7,14 @@ import requests
 
 # Register your models here.
 
+class EnrollmentInline(admin.TabularInline):
+    model = models.Enrollment
+    extra = 0  # Adjust as needed
+
+class PaymentInline(admin.TabularInline):
+    model = models.Payment
+    extra = 0  # Adjust as needed
+
 
 class StatusFilter(admin.SimpleListFilter):
     title = _('status')  # or use 'verbose_name' of the field
@@ -36,6 +44,8 @@ class StatusFilter(admin.SimpleListFilter):
         # Handle more statuses here
 
 class EnrollmentAdmin(admin.ModelAdmin):
+    inlines = [PaymentInline,]
+    
     change_form_template = "admin/accounts/enrollment/change_form.html"
     
     list_display = ('id', 'get_user_email','get_service_title', 'get_program_title', 'status')
@@ -95,7 +105,9 @@ class PaymentAdmin(admin.ModelAdmin):
 admin.site.register(models.Payment, PaymentAdmin)
 
 
-class BitCampUserAdmin(UserAdmin):    
+class BitCampUserAdmin(UserAdmin):   
+    inlines = [EnrollmentInline,]
+ 
     # Use the default fields from UserAdmin and add 'phone_number'
     fieldsets = UserAdmin.fieldsets + (
         (('Additional Info'), {'fields': ('phone_number',)}),
