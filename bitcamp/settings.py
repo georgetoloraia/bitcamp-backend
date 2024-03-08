@@ -1,10 +1,9 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-load_dotenv()  # Load .env file
+load_dotenv()
 
 PAYZE_API_KEY = os.environ.get('PAYZE_API_KEY')
-
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -28,7 +27,6 @@ INSTALLED_APPS = [
     "django.contrib.postgres",
     
     "accounts",
-    "bitbot",
     "content",
     
     "django.contrib.admin",
