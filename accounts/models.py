@@ -32,8 +32,8 @@ class BitCampUser(AbstractUser):
     
     email = models.EmailField(
         unique=True,
-        blank=False,
-        null=False
+        blank=True,
+        null=True
     )
     
     def __str__(self):
