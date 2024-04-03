@@ -12,7 +12,7 @@ from drf_spectacular.utils import extend_schema
 from . import serializers, models
 from content import models as content_models
 from datetime import datetime, timezone, timedelta
-import requests
+import requests, random
 from django.conf import settings
 import logging
 
@@ -30,15 +30,32 @@ class SignupUser(APIView):
         if serializer.is_valid():
             serializer.save()
             user = serializer.instance
-            user.set_password(request.data["password"])
+            try:
+                user.set_password(request.data["password"])
+            except:
+                password = self.randompass()
+                user.set_password(password)
             user.save()
             token, created = Token.objects.get_or_create(user=user)
 
-            return Response({
-                "token": token.key
-            }, status=status.HTTP_201_CREATED)
+            if "password" in request.data:
+                return Response({
+                    "token": token.key
+                }, status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    "token": token.key,
+                    "password": password
+                }, status=status.HTTP_201_CREATED)                
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def randompass(self, max_length = 20):
+        password = ""
+        for _ in range(random.randint(2, 4)):
+            password += "".join([chr(random.randint(33, 122)) for _ in range(random.randint(3, 5))])
+            password += random.choice(["bitcamp", "bit", "camp"])
+        return password[:max_length]
 
 class LoginUser(APIView):
     @extend_schema(responses=serializers.BitCampUserSerializer)
