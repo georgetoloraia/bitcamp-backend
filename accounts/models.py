@@ -37,7 +37,20 @@ class BitCampUser(AbstractUser):
     )
     
     def __str__(self):
-        return self.email
+        return self.username
+    
+class AuthVerificationCode(models.Model):
+    user_id = models.ForeignKey(
+        to=BitCampUser,
+        on_delete=models.CASCADE
+    )
+    
+    verification_code = models.CharField(
+        max_length=6
+    )
+    
+    def __str__(self):
+        return f"{self.user_id} | {self.verification_code}"
 
 class Enrollment(models.Model):
     name = models.CharField(
