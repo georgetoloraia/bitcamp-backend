@@ -77,6 +77,78 @@ class LoginUser(APIView):
             "token" : token.key
         })
         
+class RegByNum(APIView):
+    @extend_schema(responses=serializers.BitCampUserSerializer)
+    def post(self, request, **kwargs):
+        # I am not using any AI for this so we're gonna have to go in blind
+       
+        # We are expecting the phone number as username
+        serializer = serializers.BitCampUserSerializer(
+            data=request.data,
+            partial=True
+        )
+
+        if serializer.is_valid():
+            serializer.save()
+            user = serializer.instance
+            # We just set the username as the phone_number
+            user.phone_number = user.username
+            try:
+                user.set_password(request.data["password"])
+            except:
+                # Dont try this at home kids
+                password = SignupUser.randompass(self)
+                user.set_password(password)
+            user.save()
+            
+            authcode = self.generatecode()
+            models.AuthVerificationCode.objects.create(
+                user_id=user,
+                verification_code=authcode
+            )
+            
+            self.sendcode(authcode, user.phone_number)
+
+            if "password" in request.data:
+                return Response({
+                    "message": "Code was generated and sent to the phone number",
+                }, status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    "message": "Code was generated and sent to the phone number, also a password was generated for the user",
+                    "password": password
+                }, status=status.HTTP_201_CREATED)
+            
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def sendcode(self, code, number):
+        pass
+    
+    def generatecode(self):
+        # This is pure high quality code generator written by yours truly
+        # Epic Python one liner
+        return "".join(random.sample(list("B3I1T7C0A4M0P9"), 6)) # BTW letters say BitCamp
+        # I know it had to be only numbers but common, letters make it more safe (:
+        # Its called a verification CODE for a reason
+        # It would have been a verification NUMBER if there were only numbers
+        
+class LogByNum(APIView):
+    @extend_schema(responses=serializers.BitCampUserSerializer)
+    def post(self, request, **kwargs):
+        if request.data.get("code"):
+            try:
+                verification = models.AuthVerificationCode.objects.get(verification_code=request.data.get("code"))
+            except:
+                return Response({"error": "Invalid code"})
+            user = verification.user_id
+            
+            token, created = Token.objects.get_or_create(user=user)
+        
+            return Response({
+                "token" : token.key
+            }, status=status.HTTP_202_ACCEPTED)
+        return Response({}, status=status.HTTP_400_BAD_REQUEST)
+        
 class CurrentUser(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
