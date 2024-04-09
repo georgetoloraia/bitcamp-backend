@@ -87,6 +87,25 @@ class RegByNum(APIView):
                 return LogByNum.post(LogByNum, request)
         except:
             pass
+        
+        try:
+            user = models.BitCampUser.objects.get(
+                phone_number=request.data.get("phone_number")
+            )
+            authcode = self.generatecode()
+            models.AuthVerificationCode.objects.create(
+                user_id=user,
+                verification_code=authcode
+            )
+            
+            if not self.sendcode(authcode, user.phone_number):
+                return Response({"error": "Failed to send SMS code"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            return Response({
+                "message": "Code was generated and sent to the phone number",
+            }, status=status.HTTP_201_CREATED)
+        except:
+            pass
        
         # We are expecting the phone number as username
         serializer = serializers.BitCampUserSerializer(
