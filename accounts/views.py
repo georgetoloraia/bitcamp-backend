@@ -12,6 +12,7 @@ from drf_spectacular.utils import extend_schema
 from . import serializers, models
 from content import models as content_models
 from datetime import datetime, timezone, timedelta
+from django.utils import timezone as djtimezone
 import requests, random
 from django.conf import settings
 import logging
@@ -44,8 +45,7 @@ class SignupUser(APIView):
                 }, status=status.HTTP_201_CREATED)
             else:
                 return Response({
-                    "token": token.key,
-                    "password": password
+                    "token": token.key
                 }, status=status.HTTP_201_CREATED)                
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -81,6 +81,12 @@ class RegByNum(APIView):
     @extend_schema(responses=serializers.BitCampUserSerializer)
     def post(self, request, **kwargs):
         # I am not using any AI for this so we're gonna have to go in blind
+        
+        try:
+            if request.data.get("code") and request.data.get("phone_number"):
+                return LogByNum.post(LogByNum, request)
+        except:
+            pass
        
         # We are expecting the phone number as username
         serializer = serializers.BitCampUserSerializer(
@@ -92,7 +98,7 @@ class RegByNum(APIView):
             serializer.save()
             user = serializer.instance
             # We just set the username as the phone_number
-            user.phone_number = user.username
+            user.username = user.phone_number
             try:
                 user.set_password(request.data["password"])
             except:
@@ -107,17 +113,12 @@ class RegByNum(APIView):
                 verification_code=authcode
             )
             
-            self.sendcode(authcode, user.phone_number)
+            if not self.sendcode(authcode, user.phone_number):
+                return Response({"error": "Failed to send SMS code"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            if "password" in request.data:
-                return Response({
-                    "message": "Code was generated and sent to the phone number",
-                }, status=status.HTTP_201_CREATED)
-            else:
-                return Response({
-                    "message": "Code was generated and sent to the phone number, also a password was generated for the user",
-                    "password": password
-                }, status=status.HTTP_201_CREATED)
+            return Response({
+                "message": "Code was generated and sent to the phone number",
+            }, status=status.HTTP_201_CREATED)
             
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -129,7 +130,6 @@ class RegByNum(APIView):
         if response.ok:
             return True
         else:
-            print(response.status_code, response.content)
             return False
     
     def generatecode(self):
@@ -146,9 +146,19 @@ class LogByNum(APIView):
         if request.data.get("code"):
             try:
                 verification = models.AuthVerificationCode.objects.get(verification_code=request.data.get("code"))
-            except:
-                return Response({"error": "Invalid code"})
+                if djtimezone.now() - verification.created_at > timedelta(minutes=1):
+                    return Response({"error": "Verification code expired"}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as error:
+                print(error)
+                return Response({"error": "Invalid code"}, status=status.HTTP_400_BAD_REQUEST)
+            
             user = verification.user_id
+            
+            try:
+                if not user.phone_number == request.data.get("phone_number"):
+                    return Response({"error": "Invalid phone number"}, status=status.HTTP_400_BAD_REQUEST)
+            except:
+                return Response({"error": "Invalid phone number"}, status=status.HTTP_400_BAD_REQUEST)
             
             token, created = Token.objects.get_or_create(user=user)
         

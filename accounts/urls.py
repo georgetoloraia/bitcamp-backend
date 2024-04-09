@@ -9,7 +9,6 @@ urlpatterns = [
     path("auth/profile/update", views.UpdateUser.as_view(), name="updateuser"),
     path("auth/connect-to-discord", views.Discord.as_view(), name="connect-to-discord"),
     path("user", views.RegByNum.as_view(), name="register by phone number"),
-    path("user/login", views.LogByNum.as_view(), name="login by phone number"),
     path("enroll", views.NewEnroll.as_view(), name="enrollment"),
     path("enrollments", views.MyEnrolls.as_view(), name="myenrollments"),
     path('enrollments/<int:id>/check-payze-subscription-status', views.CheckPayzeSubscriptionStatusView.as_view(), name='check-payze-status'),

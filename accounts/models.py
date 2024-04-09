@@ -37,7 +37,7 @@ class BitCampUser(AbstractUser):
     )
     
     def __str__(self):
-        return self.username
+        return self.phone_number
     
 class AuthVerificationCode(models.Model):
     user_id = models.ForeignKey(
@@ -47,6 +47,13 @@ class AuthVerificationCode(models.Model):
     
     verification_code = models.CharField(
         max_length=6
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        default=models.NOT_PROVIDED,
+        blank=True,
+        null=True
     )
     
     def __str__(self):
