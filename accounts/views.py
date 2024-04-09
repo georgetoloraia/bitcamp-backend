@@ -121,8 +121,16 @@ class RegByNum(APIView):
             
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    def sendcode(self, code, number):
-        pass
+    def sendcode(self, code, destination):
+        sender = "BitCamp"
+        content = f"თქვენ ანგარიშზე ავტორიზაციის კოდი არის {code}. ეს კოდი ვალიდურია შემდეგი 1 წუთის განმავლობაში."
+        response = requests.get(f"http://smsoffice.ge/api/v2/send/?key={settings.SMSOFFICE_KEY}&destination={destination}&sender={sender}&content={content}&urgent=true")
+        
+        if response.ok:
+            return True
+        else:
+            print(response.status_code, response.content)
+            return False
     
     def generatecode(self):
         # This is pure high quality code generator written by yours truly
