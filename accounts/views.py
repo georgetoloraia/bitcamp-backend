@@ -92,8 +92,8 @@ class RegByNum(APIView):
             user = models.BitCampUser.objects.get(
                 phone_number=request.data.get("phone_number")
             )
-            if user:
-                raise ModuleNotFoundError
+            if not user:
+                raise Exception
             authcode = self.generatecode()
             models.AuthVerificationCode.objects.create(
                 user_id=user,
