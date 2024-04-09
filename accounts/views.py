@@ -12,7 +12,8 @@ from drf_spectacular.utils import extend_schema
 from . import serializers, models
 from content import models as content_models
 from datetime import datetime, timezone, timedelta
-import requests
+from django.utils import timezone as djtimezone
+import requests, random
 from django.conf import settings
 import logging
 
@@ -30,15 +31,31 @@ class SignupUser(APIView):
         if serializer.is_valid():
             serializer.save()
             user = serializer.instance
-            user.set_password(request.data["password"])
+            try:
+                user.set_password(request.data["password"])
+            except:
+                password = self.randompass()
+                user.set_password(password)
             user.save()
             token, created = Token.objects.get_or_create(user=user)
 
-            return Response({
-                "token": token.key
-            }, status=status.HTTP_201_CREATED)
+            if "password" in request.data:
+                return Response({
+                    "token": token.key
+                }, status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    "token": token.key
+                }, status=status.HTTP_201_CREATED)                
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def randompass(self, max_length = 20):
+        password = ""
+        for _ in range(random.randint(2, 4)):
+            password += "".join([chr(random.randint(33, 122)) for _ in range(random.randint(3, 5))])
+            password += random.choice(["bitcamp", "bit", "camp"])
+        return password[:max_length]
 
 class LoginUser(APIView):
     @extend_schema(responses=serializers.BitCampUserSerializer)
@@ -59,6 +76,117 @@ class LoginUser(APIView):
         return Response({
             "token" : token.key
         })
+        
+class RegByNum(APIView):
+    @extend_schema(responses=serializers.BitCampUserSerializer)
+    def post(self, request, **kwargs):
+        # I am not using any AI for this so we're gonna have to go in blind
+        
+        try:
+            if request.data.get("code") and request.data.get("phone_number"):
+                return LogByNum.post(LogByNum, request)
+        except:
+            pass
+        
+        try:
+            user = models.BitCampUser.objects.get(
+                phone_number=request.data.get("phone_number")
+            )
+            if not user:
+                raise Exception
+            authcode = self.generatecode()
+            models.AuthVerificationCode.objects.create(
+                user_id=user,
+                verification_code=authcode
+            )
+            
+            if not self.sendcode(authcode, user.phone_number):
+                return Response({"error": "Failed to send SMS code"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            return Response({
+                "message": "Code was generated and sent to the phone number",
+            }, status=status.HTTP_201_CREATED)
+        except:
+            pass
+       
+        # We are expecting the phone number as username
+        serializer = serializers.BitCampUserSerializer(
+            data=request.data,
+            partial=True
+        )
+
+        if serializer.is_valid():
+            serializer.save()
+            user = serializer.instance
+            # We just set the username as the phone_number
+            user.username = user.phone_number
+            try:
+                user.set_password(request.data["password"])
+            except:
+                # Dont try this at home kids
+                password = SignupUser.randompass(self)
+                user.set_password(password)
+            user.save()
+            
+            authcode = self.generatecode()
+            models.AuthVerificationCode.objects.create(
+                user_id=user,
+                verification_code=authcode
+            )
+            
+            if not self.sendcode(authcode, user.phone_number):
+                return Response({"error": "Failed to send SMS code"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            return Response({
+                "message": "Code was generated and sent to the phone number",
+            }, status=status.HTTP_201_CREATED)
+            
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def sendcode(self, code, destination):
+        sender = "BitCamp"
+        content = f"თქვენ ანგარიშზე ავტორიზაციის კოდი არის {code}. ეს კოდი ვალიდურია შემდეგი 1 წუთის განმავლობაში."
+        response = requests.get(f"http://smsoffice.ge/api/v2/send/?key={settings.SMSOFFICE_KEY}&destination={destination}&sender={sender}&content={content}&urgent=true")
+        
+        if response.ok:
+            return True
+        else:
+            return False
+    
+    def generatecode(self):
+        # This is pure high quality code generator written by yours truly
+        # Epic Python one liner
+        return "".join(random.sample(list("B3I1T7C0A4M0P9"), 6)) # BTW letters say BitCamp
+        # I know it had to be only numbers but common, letters make it more safe (:
+        # Its called a verification CODE for a reason
+        # It would have been a verification NUMBER if there were only numbers
+        
+class LogByNum(APIView):
+    @extend_schema(responses=serializers.BitCampUserSerializer)
+    def post(self, request, **kwargs):
+        if request.data.get("code"):
+            try:
+                verification = models.AuthVerificationCode.objects.get(verification_code=request.data.get("code"))
+                if djtimezone.now() - verification.created_at > timedelta(minutes=1):
+                    return Response({"error": "Verification code expired"}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as error:
+                print(error)
+                return Response({"error": "Invalid code"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            user = verification.user_id
+            
+            try:
+                if not user.phone_number == request.data.get("phone_number"):
+                    return Response({"error": "Invalid phone number"}, status=status.HTTP_400_BAD_REQUEST)
+            except:
+                return Response({"error": "Invalid phone number"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            token, created = Token.objects.get_or_create(user=user)
+        
+            return Response({
+                "token" : token.key
+            }, status=status.HTTP_202_ACCEPTED)
+        return Response({}, status=status.HTTP_400_BAD_REQUEST)
         
 class CurrentUser(APIView):
     authentication_classes = [TokenAuthentication]

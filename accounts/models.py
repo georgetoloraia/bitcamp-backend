@@ -32,12 +32,32 @@ class BitCampUser(AbstractUser):
     
     email = models.EmailField(
         unique=True,
-        blank=False,
-        null=False
+        blank=True,
+        null=True
     )
     
     def __str__(self):
-        return self.email
+        return self.phone_number
+    
+class AuthVerificationCode(models.Model):
+    user_id = models.ForeignKey(
+        to=BitCampUser,
+        on_delete=models.CASCADE
+    )
+    
+    verification_code = models.CharField(
+        max_length=6
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        default=models.NOT_PROVIDED,
+        blank=True,
+        null=True
+    )
+    
+    def __str__(self):
+        return f"{self.user_id} | {self.verification_code}"
 
 class Enrollment(models.Model):
     name = models.CharField(

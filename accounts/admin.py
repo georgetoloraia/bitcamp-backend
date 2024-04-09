@@ -120,3 +120,4 @@ class BitCampUserAdmin(UserAdmin):
     search_fields = ('email', 'first_name', 'last_name', 'phone_number')
 
 admin.site.register(models.BitCampUser, BitCampUserAdmin)
+admin.site.register(models.AuthVerificationCode)
