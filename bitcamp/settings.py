@@ -5,6 +5,8 @@ load_dotenv()
 
 PAYZE_API_KEY = os.environ.get('PAYZE_API_KEY')
 
+SMSOFFICE_KEY = os.environ.get("SMSOFFICE_KEY")
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ["SECRET_KEY"]
