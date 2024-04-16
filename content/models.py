@@ -66,3 +66,15 @@ class Program(models.Model):
     
     def __str__(self):
         return f"<Program \"{self.title}\">"
+
+class Subject(models.Model):
+    name = models.CharField(
+        max_length=128
+    )
+    
+    program = models.ForeignKey(
+        to=Program
+    )
+    
+    def __str__(self):
+        return f"<Subject \"{self.name}\">"
