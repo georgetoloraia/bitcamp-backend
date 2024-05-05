@@ -51,7 +51,7 @@ class EnrollmentAdmin(admin.ModelAdmin):
     list_display = ('id', 'get_user_email','get_service_title', 'get_program_title', 'status')
 
     # Adding filters
-    list_filter = ('status', 'name', 'user__email')
+    list_filter = ['status']
 
     # Search functionality (optional, but useful)
     search_fields = ('status', 'user__email')
@@ -97,7 +97,7 @@ class PaymentAdmin(admin.ModelAdmin):
     list_display = ('id', 'amount', 'status', 'enrollment', 'created_at', 'updated_at')
 
     # Adding filters
-    list_filter = (StatusFilter, 'status', 'created_at', 'updated_at', 'enrollment')
+    list_filter = ('status', 'created_at', 'updated_at')
 
     # Search functionality (optional, but useful)
     search_fields = ('status', 'enrollment__user__email', 'payze_transactionId', 'payze_paymentId')
